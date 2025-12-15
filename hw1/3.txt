@@ -1,0 +1,155 @@
+// Кусок кода с работы :)
+
+#pragma once
+
+#include <asio.hpp>
+
+#include <array>
+#include <atomic>
+#include <bit>
+#include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <mutex>
+#include <ostream>
+#include <ranges>
+#include <span>
+#include <string_view>
+#include <type_traits>
+#include <vector>
+
+/**
+ * @file utils.h
+ * Utility header used across all app.
+ */
+
+namespace utils {
+
+/* ---------------------- Byte-swap helpers ----------------------- */
+
+/**
+ * @brief Byte-swap an unsigned integral integer type UT.
+ *
+ * @tparam UT unsigned integral type (uint16_t/uint32_t/uint64_t etc.)
+ * @param v value to swap
+ * @return value with bytes reversed
+ *
+ * This function implements manual bit rotations for 2/4/8 byte sizes for
+ * portability and clarity (no dependency on compiler intrinsics).
+ */
+template <typename UT> inline constexpr UT byte_swap_integer(UT v) noexcept {
+  static_assert(sizeof(UT) == 1 || sizeof(UT) == 2 || sizeof(UT) == 4 ||
+                    sizeof(UT) == 8,
+                "Unsupported integer size for byte_swap_integer");
+  static_assert(std::is_integral_v<UT>,
+                "byte_swap_integer requires integral type");
+
+  if constexpr (sizeof(UT) == 1) { // no-op on single-byte types
+    return v;
+  } else if constexpr (sizeof(UT) == 2) {
+    return static_cast<UT>(((v & 0x00FFu) << 8) | ((v & 0xFF00u) >> 8));
+  } else if constexpr (sizeof(UT) == 4) {
+    return static_cast<UT>(((v & 0x000000FFu) << 24) |
+                           ((v & 0x0000FF00u) << 8) | ((v & 0x00FF0000u) >> 8) |
+                           ((v & 0xFF000000u) >> 24));
+  } else {
+    return static_cast<UT>(((v & 0x00000000000000FFULL) << 56) |
+                           ((v & 0x000000000000FF00ULL) << 40) |
+                           ((v & 0x0000000000FF0000ULL) << 24) |
+                           ((v & 0x00000000FF000000ULL) << 8) |
+                           ((v & 0x000000FF00000000ULL) >> 8) |
+                           ((v & 0x0000FF0000000000ULL) >> 24) |
+                           ((v & 0x00FF000000000000ULL) >> 40) |
+                           ((v & 0xFF00000000000000ULL) >> 56));
+  }
+}
+
+// Helper to get the appropriate unsigned integer type for a given size
+template <size_t Size> struct uint_type_for_size {
+  using type = void; // Fallback
+};
+
+template <> struct uint_type_for_size<1> {
+  using type = uint8_t;
+};
+
+template <> struct uint_type_for_size<2> {
+  using type = uint16_t;
+};
+
+template <> struct uint_type_for_size<4> {
+  using type = uint32_t;
+};
+
+template <> struct uint_type_for_size<8> {
+  using type = uint64_t;
+};
+
+template <size_t Size>
+using uint_type_for_size_t = typename uint_type_for_size<Size>::type;
+
+template <typename T, typename UInt = uint_type_for_size_t<sizeof(T)>>
+inline constexpr auto get_uint_base(T value) noexcept {
+  if constexpr (std::is_floating_point_v<T>) {
+    UInt tmp{0};
+    std::memcpy(&tmp, &value, sizeof(UInt));
+    return tmp;
+  } else {
+    return value;
+  }
+}
+
+template <typename T, std::endian Endianness>
+inline constexpr T convert_for_endian(T value) noexcept {
+  static_assert(std::is_trivially_copyable_v<T>,
+                "T must be trivially copyable");
+
+  if constexpr (sizeof(T) == 1) {
+    return value;
+  } else {
+    auto tmp = get_uint_base(value);
+    if constexpr (std::endian::native != Endianness) {
+      tmp = byte_swap_integer(tmp);
+    }
+
+    T out = {};
+    std::memcpy(&out, &tmp, sizeof(T));
+    return out;
+  }
+}
+
+/* ---------------------- Buffer reading helper ----------------------- */
+
+/**
+ * @brief Read a trivially-copyable value of type T from a byte buffer safely
+ * with optional endian conversion.
+ *
+ * @tparam T trivially-copyable POD type to read
+ * (uint16_t,uint32_t,float,double,...)
+ * @tparam Endianness std::endian of the the data in the buffer
+ * @param buf reference to source buffer
+ * @param offset reference to offset which will be advanced by sizeof(T)
+ * @return value of type T read from buffer (with endianness corrected if
+ * needed)
+ *
+ * @note
+ * - Uses memcpy to avoid strict-aliasing violations.
+ *
+ * - Works for floating types since we treat their bit patterns as integers for
+ * swapping.
+ */
+template <typename T, std::endian Endianness>
+inline constexpr T read_from_buffer(const std::span<const uint8_t> buf,
+                                    size_t &offset) noexcept {
+  T value{0};
+  if (offset + sizeof(T) > buf.size()) [[unlikely]] {
+    return value;
+  }
+  std::memcpy(&value, buf.data() + offset, sizeof(T));
+  offset += sizeof(T);
+
+  return convert_for_endian<T, Endianness>(value);
+}

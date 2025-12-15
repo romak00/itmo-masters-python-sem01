@@ -1,0 +1,49 @@
+python task_2/tail.py 1.txt 2.txt 3.txt
+==> 1.txt <==
+line1
+
+line3
+==> 2.txt <==
+line
+        line
+line
+line
+line
+line
+
+line
+line
+line
+==> 3.txt <==
+                                    size_t &offset) noexcept {
+  T value{0};
+  if (offset + sizeof(T) > buf.size()) [[unlikely]] {
+    return value;
+  }
+  std::memcpy(&value, buf.data() + offset, sizeof(T));
+  offset += sizeof(T);
+
+  return convert_for_endian<T, Endianness>(value);
+}
+
+seq 1 21 | python task_2/tail.py
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+
+python task_2/tail.py non_existing_file.txt
+Error: File not found: non_existing_file.txt

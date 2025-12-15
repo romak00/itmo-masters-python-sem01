@@ -1,0 +1,286 @@
+python task_1/nl.py 1.txt
+     1  line1
+     2
+     3  line3
+
+echo -e "a\nb\n\nc\n\n\na" | python task_1/nl.py
+     1  a
+     2  b
+     3
+     4  c
+     5
+     6
+     7  a
+
+python task_1/nl.py non_existing_file.txt
+Error: File not found: non_existing_file.txt
+
+python task_1/nl.py 2.txt
+     1  line
+     2  line
+     3  line
+     4
+     5
+     6
+     7  line
+     8  line
+     9  line
+    10  line
+    11  line
+    12
+    13
+    14
+    15
+    16  line
+    17  line
+    18  line
+    19  line
+    20  line
+    21  line
+    22          line
+    23  line
+    24  line
+    25  line
+    26  line
+    27
+    28
+    29  line
+    30  line
+    31  line
+    32  line
+    33
+    34  line
+    35  line
+    36   line
+    37  line
+    38   line
+    39  line
+    40  line
+    41  line
+    42
+    43  line
+    44  line
+    45  line
+    46  line
+    47
+    48  line
+    49  line
+    50     line
+    51  line
+    52  line
+    53  line
+    54  line
+    55
+    56
+    57
+    58
+    59  line
+    60  line
+    61              line
+    62  line
+    63  line
+    64  line
+    65  line
+    66  line
+    67  line
+    68  line
+    69  line
+    70
+    71  line
+    72  line
+    73  line
+    74  line
+    75  line
+    76  line
+    77
+    78  line
+    79  line
+    80  line
+    81  line
+    82  line
+    83  line
+    84  line
+    85          line
+    86  line
+    87  line
+    88
+    89  line
+    90  line
+    91  line
+    92  line
+    93      line
+    94  line
+    95  line
+    96  line
+    97  line
+    98  line
+    99  line
+   100  line
+   101  line
+   102  line
+   103          line
+   104  line
+   105  line
+   106  line
+   107  line
+   108
+   109  line
+   110  line
+   111  line
+
+python task_1/nl.py 3.txt
+     1  // Кусок кода с работы :)
+     2
+     3  #pragma once
+     4
+     5  #include <asio.hpp>
+     6
+     7  #include <array>
+     8  #include <atomic>
+     9  #include <bit>
+    10  #include <chrono>
+    11  #include <cmath>
+    12  #include <cstddef>
+    13  #include <cstdint>
+    14  #include <cstring>
+    15  #include <memory>
+    16  #include <mutex>
+    17  #include <ostream>
+    18  #include <ranges>
+    19  #include <span>
+    20  #include <string_view>
+    21  #include <type_traits>
+    22  #include <vector>
+    23
+    24  /**
+    25   * @file utils.h
+    26   * Utility header used across all app.
+    27   */
+    28
+    29  namespace utils {
+    30
+    31  /* ---------------------- Byte-swap helpers ----------------------- */
+    32
+    33  /**
+    34   * @brief Byte-swap an unsigned integral integer type UT.
+    35   *
+    36   * @tparam UT unsigned integral type (uint16_t/uint32_t/uint64_t etc.)
+    37   * @param v value to swap
+    38   * @return value with bytes reversed
+    39   *
+    40   * This function implements manual bit rotations for 2/4/8 byte sizes for
+    41   * portability and clarity (no dependency on compiler intrinsics).
+    42   */
+    43  template <typename UT> inline constexpr UT byte_swap_integer(UT v) noexcept {
+    44    static_assert(sizeof(UT) == 1 || sizeof(UT) == 2 || sizeof(UT) == 4 ||
+    45                      sizeof(UT) == 8,
+    46                  "Unsupported integer size for byte_swap_integer");
+    47    static_assert(std::is_integral_v<UT>,
+    48                  "byte_swap_integer requires integral type");
+    49
+    50    if constexpr (sizeof(UT) == 1) { // no-op on single-byte types
+    51      return v;
+    52    } else if constexpr (sizeof(UT) == 2) {
+    53      return static_cast<UT>(((v & 0x00FFu) << 8) | ((v & 0xFF00u) >> 8));
+    54    } else if constexpr (sizeof(UT) == 4) {
+    55      return static_cast<UT>(((v & 0x000000FFu) << 24) |
+    56                             ((v & 0x0000FF00u) << 8) | ((v & 0x00FF0000u) >> 8) |
+    57                             ((v & 0xFF000000u) >> 24));
+    58    } else {
+    59      return static_cast<UT>(((v & 0x00000000000000FFULL) << 56) |
+    60                             ((v & 0x000000000000FF00ULL) << 40) |
+    61                             ((v & 0x0000000000FF0000ULL) << 24) |
+    62                             ((v & 0x00000000FF000000ULL) << 8) |
+    63                             ((v & 0x000000FF00000000ULL) >> 8) |
+    64                             ((v & 0x0000FF0000000000ULL) >> 24) |
+    65                             ((v & 0x00FF000000000000ULL) >> 40) |
+    66                             ((v & 0xFF00000000000000ULL) >> 56));
+    67    }
+    68  }
+    69
+    70  // Helper to get the appropriate unsigned integer type for a given size
+    71  template <size_t Size> struct uint_type_for_size {
+    72    using type = void; // Fallback
+    73  };
+    74
+    75  template <> struct uint_type_for_size<1> {
+    76    using type = uint8_t;
+    77  };
+    78
+    79  template <> struct uint_type_for_size<2> {
+    80    using type = uint16_t;
+    81  };
+    82
+    83  template <> struct uint_type_for_size<4> {
+    84    using type = uint32_t;
+    85  };
+    86
+    87  template <> struct uint_type_for_size<8> {
+    88    using type = uint64_t;
+    89  };
+    90
+    91  template <size_t Size>
+    92  using uint_type_for_size_t = typename uint_type_for_size<Size>::type;
+    93
+    94  template <typename T, typename UInt = uint_type_for_size_t<sizeof(T)>>
+    95  inline constexpr auto get_uint_base(T value) noexcept {
+    96    if constexpr (std::is_floating_point_v<T>) {
+    97      UInt tmp{0};
+    98      std::memcpy(&tmp, &value, sizeof(UInt));
+    99      return tmp;
+   100    } else {
+   101      return value;
+   102    }
+   103  }
+   104
+   105  template <typename T, std::endian Endianness>
+   106  inline constexpr T convert_for_endian(T value) noexcept {
+   107    static_assert(std::is_trivially_copyable_v<T>,
+   108                  "T must be trivially copyable");
+   109
+   110    if constexpr (sizeof(T) == 1) {
+   111      return value;
+   112    } else {
+   113      auto tmp = get_uint_base(value);
+   114      if constexpr (std::endian::native != Endianness) {
+   115        tmp = byte_swap_integer(tmp);
+   116      }
+   117
+   118      T out = {};
+   119      std::memcpy(&out, &tmp, sizeof(T));
+   120      return out;
+   121    }
+   122  }
+   123
+   124  /* ---------------------- Buffer reading helper ----------------------- */
+   125
+   126  /**
+   127   * @brief Read a trivially-copyable value of type T from a byte buffer safely
+   128   * with optional endian conversion.
+   129   *
+   130   * @tparam T trivially-copyable POD type to read
+   131   * (uint16_t,uint32_t,float,double,...)
+   132   * @tparam Endianness std::endian of the the data in the buffer
+   133   * @param buf reference to source buffer
+   134   * @param offset reference to offset which will be advanced by sizeof(T)
+   135   * @return value of type T read from buffer (with endianness corrected if
+   136   * needed)
+   137   *
+   138   * @note
+   139   * - Uses memcpy to avoid strict-aliasing violations.
+   140   *
+   141   * - Works for floating types since we treat their bit patterns as integers for
+   142   * swapping.
+   143   */
+   144  template <typename T, std::endian Endianness>
+   145  inline constexpr T read_from_buffer(const std::span<const uint8_t> buf,
+   146                                      size_t &offset) noexcept {
+   147    T value{0};
+   148    if (offset + sizeof(T) > buf.size()) [[unlikely]] {
+   149      return value;
+   150    }
+   151    std::memcpy(&value, buf.data() + offset, sizeof(T));
+   152    offset += sizeof(T);
+   153
+   154    return convert_for_endian<T, Endianness>(value);
+   155  }

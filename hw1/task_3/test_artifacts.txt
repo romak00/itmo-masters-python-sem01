@@ -1,0 +1,14 @@
+python task_3/wc.py 1.txt 2.txt 3.txt
+   2    2   12 1.txt
+ 110   91  519 2.txt
+ 154  584 4622 3.txt
+ 266  677 5153 total
+
+python task_3/wc.py 3.txt            
+ 154  584 4622 3.txt
+
+echo -e "hello\n\nworld\n\ntest\n" | python task_3/wc.py
+   6    3   20
+
+python task_3/wc.py non_existing_file.txt
+Error: File not found: non_existing_file.txt
