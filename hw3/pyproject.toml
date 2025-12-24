@@ -1,0 +1,8 @@
+[project]
+name = "hw_1_matrix_lib"
+version = "0.1.0"
+description = "hw3"
+requires-python = ">=3.9"
+
+[project.dependencies]
+numpy = ">=1.24"

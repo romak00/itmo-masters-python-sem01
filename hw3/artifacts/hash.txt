@@ -1,0 +1,2 @@
+hash(AB) = 0
+hash(CD) = 0
