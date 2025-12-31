@@ -1,0 +1,20 @@
+➜  hw4 git:(main) ✗ python ./task_3/pipeline.py
+Enter lines. Type Ctrl-C or Ctrl-D to abort.
+line1
+[2025-12-31 17:14:40] yvar1
+(logged) [2025-12-31 17:14:40] FROM_B: yvar1
+abacaba
+[2025-12-31 17:14:45] nonpnon
+(logged) [2025-12-31 17:14:45] FROM_B: nonpnon
+ojlj;k;
+[2025-12-31 17:14:50] bwyw;x;
+(logged) [2025-12-31 17:14:50] FROM_B: bwyw;x;
+efefsfsaf\
+[2025-12-31 17:14:55] rsrsfsfns\
+(logged) [2025-12-31 17:14:55] FROM_B: rsrsfsfns\
+exit
+[2025-12-31 17:15:00] rkvg
+(logged) [2025-12-31 17:15:00] FROM_B: rkvg
+EOF received, sending termination sentinel to A...
+Waiting for processes A and B to finish...
+Shutdown complete.
